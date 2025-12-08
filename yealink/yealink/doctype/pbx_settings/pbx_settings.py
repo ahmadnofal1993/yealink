@@ -3,11 +3,12 @@
 
 import frappe
 from frappe.model.document import Document
-from yealink.utils import integrate,retry_on_token_expiry
+from yealink.utils import integrate,retry_on_token_expiry,process_code
 from functools import wraps
 import hashlib
 import json
 import pymysql
+
  
 class PBXSettings(Document):
 	
@@ -171,9 +172,10 @@ class PBXSettings(Document):
 			
 		else:
 			diff= frappe.utils.get_datetime() -self.last_cdr_data 
-			print(str(diff))
+			 
 			if int(diff.total_seconds()/60) >= self.diff_time_to_sync:
 				self.get_cdrs(page=None)
+		print('conmit')
 		frappe.db.commit()
 
 	@retry_on_token_expiry						
@@ -228,33 +230,36 @@ class PBXSettings(Document):
 						"start_time":	str(int(start_time)),
 						"end_time":  str(int(end_time))
 						 
-				}
-			print(str(query_params))
+				}			
 			
 			res=integrate(url=get_cdrs_url,token=None,req_data=None,query_params=query_params,method=self.get_cdrs_method)
-			self.last_cdr_data=frappe.utils.get_datetime()
-			self.save()
-		print(res.json())
+			
 		if res.status_code==200:
 			if res.json().get('errcode') == 0 :			
 				if  res.json().get('total_number') > 0 :
-					for data in  res.json().get('data'):
 					
-						doc = frappe.get_doc({
-								'doctype': 'PBX CDRs',
-								'pbx':self.name,
-								'full_data': str(data),
-										
-							})
-						try:
-							doc.insert()
-							frappe.db.commit()
-						except   pymysql.err.IntegrityError as e:
-							print(type(e))
-							frappe.db.rollback()
-							##where call_type != 'Internal'
-							print("Exception name:", type(e).__name__)
-				
+					self.db_set('last_cdr_data',frappe.utils.get_datetime(),False,False,True)
+					
+					print(self.last_cdr_data)	
+					for data in  res.json().get('data'):
+						if self.filter_cdr_code is not None and len(self.filter_cdr_code) > 0 :
+							if process_code(self.filter_cdr_code,str(data))==True :
+								doc = frappe.get_doc({
+										'doctype': 'PBX CDRs',
+										'pbx':self.name,
+										'full_data': str(data),
+												
+									})
+								try:
+									doc.insert()
+									print(doc.name)
+								except   pymysql.err.IntegrityError as e:
+									
+									frappe.db.rollback()
+									##where call_type != 'Internal'
+									print("Exception name:", type(e).__name__)
+					frappe.db.commit()
+					
 		return res
 
 	@retry_on_token_expiry						

@@ -11,6 +11,7 @@
   "url",
   "disable",
   "total_cdrs",
+  "filter_cdr_code",
   "column_break_dufk",
   "username",
   "password",
@@ -296,12 +297,18 @@
    "fieldname": "diff_time_to_sync",
    "fieldtype": "Int",
    "label": "Differnect Time To sync (Minutes)"
+  },
+  {
+   "fieldname": "filter_cdr_code",
+   "fieldtype": "Code",
+   "label": "CDRs Filter",
+   "options": "Python"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-07 12:06:40.281912",
+ "modified": "2025-12-08 02:17:21.198608",
  "modified_by": "Administrator",
  "module": "Yealink",
  "name": "PBX Settings",

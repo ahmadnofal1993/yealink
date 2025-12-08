@@ -1,7 +1,41 @@
 
 import requests,ast
 from functools import wraps
+import frappe 
+import re
 
+def process_code(code,data_to_validate):
+	tokens = re.findall(r"_VS_[A-Za-z0-9_]+_VS_", code)
+	cleaned = [t.replace("_VS_", "") for t in tokens]
+	data= ast.literal_eval(str(data_to_validate))
+
+	replacement={}
+	for i in range(len(tokens)) :
+		replacement.update({tokens[i]:data.get(cleaned[i])})
+	for key, value in replacement.items():
+		if isinstance(value, str):
+			replace_with = repr(value)
+		else:
+			replace_with = str(value)
+		code = code.replace(key, replace_with)
+	object_from_code={}
+	global_and_local_variable={}
+	exec(code,global_and_local_variable, object_from_code) 
+	if ('result'  in object_from_code):    
+		return object_from_code['result']
+	
+def get_contact(phone_number):
+	if len(phone_number) ==10:
+		result = phone_number[2:] 
+	else:
+		result=phone_number
+	if frappe.db.exists('Contact Phone', {'phone' : result}):
+		return frappe.get_doc('Contact Phone',{'phone' : result}).parent
+	elif frappe.db.exists('Contact Phone', {'phone' : '9639'+result}):
+		return frappe.get_doc('Contact Phone',{'phone' :'9639'+ result}).parent
+	else:
+		return None
+	
 def retry_on_token_expiry(func):
 		@wraps(func)
 		def wrapper(self, *args, **kwargs):
