@@ -10,29 +10,35 @@ from frappe.desk.form.assign_to import add
 class PBXCDRs(Document):
 	def create_task_for_notanswered(self):
 		self.reload()
-		assigned_to=get_extension_user(self.call_to_number)
-		task = frappe.get_doc({
-        "doctype": "Task",
-        "subject": "Call",
-        "description": "Call "+str(assigned_to)+str(self.call_to_number),
-       
-        "status": "Open"
-   		 })
+		if self.disposition != 'ANSWERED':		
+			
+			assigned_to=get_extension_user(self.call_to_number)
+			if assigned_to != False :
+			 
+				description = f"Call From : {str(self.call_from_number)} To {str(self.call_to_number)} and the status is {self.disposition}"
+				 
+				task = frappe.get_doc({
+				"doctype": "Task",
+				"subject": "Call",
+				"description": description,
+			
+				"status": "Open"
+				})
 
-    # Insert into DB
-		task.insert(ignore_permissions=True)
-		assigned_to_list=[]
-		assigned_to_list.append(assigned_to)
-    # Assign to a user if provided
-	
-		add({
-             "assign_to": assigned_to_list, 
-             "doctype": "Task",
-             "name": task.name,
-             "description": 'ddd',
-             "priority": task.priority
-        })
-		frappe.db.commit()
+			# Insert into DB
+				task.insert(ignore_permissions=True)
+				assigned_to_list=[]
+				assigned_to_list.append(assigned_to)
+			# Assign to a user if provided
+			
+				add({
+					"assign_to": assigned_to_list, 
+					"doctype": "Task",
+					"name": task.name,
+					"description": 'ddd',
+					"priority": task.priority
+				})
+				frappe.db.commit()
 
 
 	def after_insert(self):	
@@ -64,15 +70,39 @@ class PBXCDRs(Document):
 		"did":str(data.get('did')) or "NA",
 		"did_name":str(data.get('did_name')) or "NA",
 		"call_id":str(data.get('call_id')) or "NA",
-		"enb_call_note":str(data.get('enb_call_note')) or "NA"
+		"enb_call_note":str(data.get('enb_call_note')) or "NA",
+		"src_trunk":str(data.get('src_trunk')) or "NA",
+		"dst_trunk" : str(data.get('dst_trunk')) or "NA", 
+		"company":  frappe.get_doc("PBX Company Trunk", {"trunk": str(data.get("src_trunk"))}).company if frappe.db.exists("PBX Company Trunk", {"trunk": str(data.get("src_trunk"))}) else ( frappe.get_doc("PBX Company Trunk", {"trunk": str(data.get("dst_trunk"))}).company if frappe.db.exists("PBX Company Trunk", {"trunk": str(data.get("dst_trunk"))}) else None)
+
 		}
 		contact=get_contact(str(data.get('call_from_number')))
-		print(contact)
+		 
 		if contact is not None :
 			updates.update({"related_doctype_id":contact})
-		
+		else:
+			contact=get_contact(str(data.get('call_to_number')))
+			if contact is not None :
+				updates.update({"related_doctype_id":contact})
 		
 		
 		frappe.db.set_value(self.doctype, self.name, updates)
 		self.create_task_for_notanswered()
 	
+
+
+def get_phone_cdrs(incoming,outgoing,number):
+	cdrs=[]
+	if incoming==True:
+		if (frappe.db.count("PBX CDRs", filters={"call_type" :'Inbound','call_from_number':number}) > 0):
+			cdrs.append(frappe.get_all('PBX CDRs', filters=[["call_type",'=','Inbound'],['call_from_number','=',number]],fields=['call_from','call_from_name','call_from_number','call_to','call_to_name','call_to_number','call_type','cdr_time','disposition','reason','talk_duration']))
+	if outgoing==True:
+		if (frappe.db.count("PBX CDRs", filters={"call_type" :'Outbound','call_to_number':number}) > 0):
+			cdrs.append(frappe.get_all('PBX CDRs', filters=[["call_type",'=','Outbound'],['call_to_number','=',number]],fields=['call_from','call_from_name','call_from_number','call_to','call_to_name','call_to_number','call_type','cdr_time','disposition','reason','talk_duration']))
+	if len(cdrs) >0 : 
+		return cdrs
+
+
+def get_phone_cdrs_by_cdrid(incoming,outgoing,number):
+	frappe.get_all('PBX CDRs',or_filters=[[ "call_to_number", "=", '0997777073'],[ "call_from_number", "=", '0997777073']],fields=['call_id'],order_by='cdr_id desc',distinct=True,limit=3,pluck='call_id')
+

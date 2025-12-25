@@ -34,6 +34,9 @@
   "did_name",
   "enb_call_note",
   "ring_duration",
+  "src_trunk",
+  "dst_trunk",
+  "company",
   "section_break_vvhk",
   "full_data"
  ],
@@ -198,12 +201,28 @@
    "fieldtype": "Dynamic Link",
    "label": "Document ID",
    "options": "related_doctype"
+  },
+  {
+   "fieldname": "src_trunk",
+   "fieldtype": "Data",
+   "label": "Source Trunk"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "dst_trunk",
+   "fieldtype": "Data",
+   "label": "Destination Trunk"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-08 00:33:59.722004",
+ "modified": "2025-12-23 16:23:39.757277",
  "modified_by": "Administrator",
  "module": "Yealink",
  "name": "PBX CDRs",

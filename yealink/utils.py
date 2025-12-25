@@ -99,6 +99,13 @@ def incoming_call():
 
 	
 
+def get_lead_from_number(phone_number):
+    if frappe.db.exists('Contact Phone',{'phone':phone_number}):
+        contact=frappe.get_doc('Contact Phone',{'phone':phone_number}).parent
+        data=frappe.get_all('Dynamic Link', filters=[["parenttype",'=','Contact'],['parentfield','=','links'],['parent','=',contact],['link_doctype','=','Lead']],fields=['link_name'],limit=1,pluck='link_name')
+        if len(data)==1 :
+            return data[0]
+        
 
 @frappe.whitelist( allow_guest=True,methods=["POST"])
 def incoming_call2():
@@ -183,6 +190,13 @@ def get_extension_user(extension_number):
 		return frappe.get_doc('PBX User Extension',{'pbx_ext' : extension_number}).parent
 	else:
 		return False
+	
+def get_user_extension(user):
+	if len(frappe.get_all('PBX User Extension',fields=['pbx_ext'],filters={'parent':user,'is_default':1})) ==1 :
+		return frappe.get_all('PBX User Extension',fields=['pbx_ext'],filters={'parent':user,'is_default':1},pluck='pbx_ext')[0]
+	
+
+
 def get_extension_email(extension_number):
 	if frappe.db.exists('PBX User Extension',{'pbx_ext' : extension_number}):
 		return frappe.get_doc('User',frappe.get_doc('PBX User Extension',{'pbx_ext' : extension_number}).parent).email
@@ -190,14 +204,10 @@ def get_extension_email(extension_number):
 		return False
 
 def get_contact(phone_number):
-	if len(phone_number) ==10:
-		result = phone_number[2:] 
-	else:
-		result=phone_number
-	if frappe.db.exists('Contact Phone', {'phone' : result}):
-		return frappe.get_doc('Contact Phone',{'phone' : result}).parent
-	elif frappe.db.exists('Contact Phone', {'phone' : '9639'+result}):
-		return frappe.get_doc('Contact Phone',{'phone' :'9639'+ result}).parent
+	if frappe.db.exists('Contact Phone', {'phone' : phone_number}):
+		return frappe.get_doc('Contact Phone',{'phone' : phone_number}).parent
+	elif frappe.db.exists('Contact Phone', {'phone' : '9639'+phone_number}):
+		return frappe.get_doc('Contact Phone',{'phone' :'9639'+ phone_number}).parent
 	else:
 		return None
 	

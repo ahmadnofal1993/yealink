@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from yealink.utils import integrate,retry_on_token_expiry,process_code
+from yealink.utils import integrate,retry_on_token_expiry,process_code,get_user_extension
 from functools import wraps
 import hashlib
 import json
@@ -394,17 +394,18 @@ class PBXSettings(Document):
 	
 	@retry_on_token_expiry
 	def make_call(self,from_number,to_number):
-		call_url=self.url+self.call_api
-		params={
-		
-			"caller": "981",
-			"callee": str(to_number),
-		
-			"auto_answer": "no"
-		}
-		query_params = {
-					"access_token":self.pbx_token,		
+		if get_user_extension(frappe.session.user) != 'None':
+			call_url=self.url+self.call_api
+			params={
+			
+				"caller": get_user_extension(frappe.session.user),
+				"callee": str(to_number),
+			
+				"auto_answer": "no"
 			}
-		res=integrate(url=call_url,token=None,req_data=params,query_params=query_params,method=self.call_api_method)
-		self.insert_event("CALL",res.json().get('call_id'))
-		return res
+			query_params = {
+						"access_token":self.pbx_token,		
+				}
+			res=integrate(url=call_url,token=None,req_data=params,query_params=query_params,method=self.call_api_method)
+			self.insert_event("CALL",res.json().get('call_id'))
+			return res
