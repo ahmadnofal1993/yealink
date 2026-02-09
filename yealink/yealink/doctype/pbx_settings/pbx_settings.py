@@ -419,9 +419,11 @@ class PBXSettings(Document):
 			print(res.json())
 			if res.status_code==200:
 				data=res.json()
-				self.pbx_token=data.get('access_token')
-				self.pbx_refresh_token=data.get('refresh_token')
-				self.save()
+				updates={"pbx_token":data.get('access_token') ,"pbx_refresh_token":data.get('refresh_token')}
+				#self.pbx_token=data.get('access_token')
+				#self.pbx_refresh_token=data.get('refresh_token')
+				#self.save()
+				frappe.db.set_value(self.doctype, self.name, updates)
 				frappe.db.commit()
 		except Exception as e :
 			logger_exception.error(f" file => pbxsettings.py method =>  get_token  self  {self}      {frappe.get_traceback()} ")
@@ -433,8 +435,8 @@ class PBXSettings(Document):
 	def delete_phonebooks(self):
 		try:
 			for phonebook in self.pbx_phonebooks:
-				phonebook.delete()
-			
+				#phonebook.delete()
+				frappe.delete_doc("Phonebook", phonebook.name, ignore_permissions=True, force=1)
 			frappe.db.commit()
 		except Exception as e :
 			logger_exception.error(f" file => pbxsettings.py method =>  delete_phonebooks  self  {self}      {frappe.get_traceback()} ")
@@ -472,6 +474,7 @@ class PBXSettings(Document):
 				"phonebook_name": str(phonebook_name),
 				"total_contacts":int(total_contacts)
 				})
+			self.reload()			
 			self.save()
 			frappe.db.commit()
 		except Exception as e :

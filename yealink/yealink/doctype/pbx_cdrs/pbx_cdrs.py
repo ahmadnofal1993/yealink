@@ -62,53 +62,48 @@ class PBXCDRs(Document):
 		try:
 			data= ast.literal_eval(str(self.full_data))
 		except Exception as e :
-			data=json.loads(str(self.full_data))	 
-		try:
-			updates= {
-				"cdr_id" : str(data.get('id')) if  str(data.get('id')) != 'None' else str(data.get('new_id'))    or "NA",
-			"uid": str(data.get('uid'))  or "NA",
-			"call_from": str(data.get('call_from')) or "NA",
-			"call_to": str(data.get('call_to')) or "NA",
-			"cdr_time": str(data.get('time')) or "NA",
-			"timestamp":str(data.get('timestamp')) or "NA" ,
-			"duration":  data.get('duration') or 0,
-			"talk_duration": data.get('talk_duration') or 0, 
-			"ring_duration":data.get('ring_duration') or 0 ,
-			"src_addr":str(data.get('src_addr')) or "NA",
-			"disposition":str(data.get('disposition')) or "NA",
-			"call_type":str(data.get('call_type')) or "NA",
-			"reason":str(data.get('reason') ) or "NA",
-			"call_from_number":normalize_syria_number(str(data.get('call_from_number'))) or "NA",
-			"call_to_number":normalize_syria_number(str(data.get('call_to_number') ))or "NA",
-			"call_from_name":str(data.get('call_from_name')) or "NA",
-			"call_to_name":str(data.get('call_to_name')) or "NA",
-			"call_note":str(data.get('call_note')) or "NA",
-			"call_note_id":str(data.get('call_note_id')) or "NA",
-			"did":str(data.get('did')) or "NA",
-			"did_name":str(data.get('did_name')) or "NA",
-			"call_id":str(data.get('call_id')) or "NA",
-			"enb_call_note":str(data.get('enb_call_note')) or "NA",
-			"src_trunk":str(data.get('src_trunk')) or "NA",
-			"dst_trunk" : str(data.get('dst_trunk')) or "NA", 
-			"company":  frappe.get_doc("PBX Company Trunk", {"trunk": str(data.get("src_trunk"))}).company if frappe.db.exists("PBX Company Trunk", {"trunk": str(data.get("src_trunk"))}) else ( frappe.get_doc("PBX Company Trunk", {"trunk": str(data.get("dst_trunk"))}).company if frappe.db.exists("PBX Company Trunk", {"trunk": str(data.get("dst_trunk"))}) else None)
+			data=json.loads(str(self.full_data))	 		
+		updates= {
+			"cdr_id" : str(data.get('id')) if  str(data.get('id')) != 'None' else str(data.get('new_id'))    or "NA",
+		"uid": str(data.get('uid'))  or "NA",
+		"call_from": str(data.get('call_from')) or "NA",
+		"call_to": str(data.get('call_to')) or "NA",
+		"cdr_time": str(data.get('time')) or "NA",
+		"timestamp":str(data.get('timestamp')) or "NA" ,
+		"duration":  data.get('duration') or 0,
+		"talk_duration": data.get('talk_duration') or 0, 
+		"ring_duration":data.get('ring_duration') or 0 ,
+		"src_addr":str(data.get('src_addr')) or "NA",
+		"disposition":str(data.get('disposition')) or "NA",
+		"call_type":str(data.get('call_type')) or "NA",
+		"reason":str(data.get('reason') ) or "NA",
+		"call_from_number":normalize_syria_number(str(data.get('call_from_number'))) or "NA",
+		"call_to_number":normalize_syria_number(str(data.get('call_to_number') ))or "NA",
+		"call_from_name":str(data.get('call_from_name')) or "NA",
+		"call_to_name":str(data.get('call_to_name')) or "NA",
+		"call_note":str(data.get('call_note')) or "NA",
+		"call_note_id":str(data.get('call_note_id')) or "NA",
+		"did":str(data.get('did')) or "NA",
+		"did_name":str(data.get('did_name')) or "NA",
+		"call_id":str(data.get('call_id')) or "NA",
+		"enb_call_note":str(data.get('enb_call_note')) or "NA",
+		"src_trunk":str(data.get('src_trunk')) or "NA",
+		"dst_trunk" : str(data.get('dst_trunk')) or "NA", 
+		"company":  frappe.get_doc("PBX Company Trunk", {"trunk": str(data.get("src_trunk"))}).company if frappe.db.exists("PBX Company Trunk", {"trunk": str(data.get("src_trunk"))}) else ( frappe.get_doc("PBX Company Trunk", {"trunk": str(data.get("dst_trunk"))}).company if frappe.db.exists("PBX Company Trunk", {"trunk": str(data.get("dst_trunk"))}) else None)
 
-			}
-			if str(data.get('call_type')) =='Inbound':
-				contact=get_contact(normalize_syria_number(str(data.get('call_from_number'))))
-			
-				if contact is not None :
-					updates.update({"related_doctype_id":contact.name,"related_doctype":contact.doctype})
-			else:
-				contact=get_contact(normalize_syria_number(str(data.get('call_to_number'))))
-				if contact is not None :
-					updates.update({"related_doctype_id":contact.name,"related_doctype":contact.doctype})
-			print(updates)
-			
-			frappe.db.set_value(self.doctype, self.name, updates)
-		except Exception as e :
-			logger_exception.error(f" file => pbx_cdrs.py method =>  after_insert  self  {self} {frappe.get_traceback()} ")
-			frappe.log_error(message=f" file => pbx_cdrs.py method =>  after_insert  self  {self} {frappe.get_traceback()} ", title="Yealink") 
-
+		}
+		if str(data.get('call_type')) =='Inbound':
+			contact=get_contact(normalize_syria_number(str(data.get('call_from_number'))))
+		
+			if contact is not None :
+				updates.update({"related_doctype_id":contact.name,"related_doctype":contact.doctype})
+		else:
+			contact=get_contact(normalize_syria_number(str(data.get('call_to_number'))))
+			if contact is not None :
+				updates.update({"related_doctype_id":contact.name,"related_doctype":contact.doctype})
+		print(updates)
+		
+		frappe.db.set_value(self.doctype, self.name, updates)
 	
 
 		#self.create_task_for_notanswered()
