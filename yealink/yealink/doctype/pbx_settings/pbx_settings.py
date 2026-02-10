@@ -265,9 +265,19 @@ class PBXSettings(Document):
 		try:
 			if self.last_cdr_date is None:
 				self.last_cdr_date=frappe.utils.get_datetime()
-				self.get_all_cdrs()
-				
-				
+				frappe.enqueue(
+                                           self.get_all_cdrs, # python function or a module path as string
+                                            queue="default", # one of short, default, long
+                                            timeout=None, # pass timeout manually
+                                            is_async=True, # if this is True, method is run in worker
+                                            now=False, # if this is True, method is run directly (not in a worker) 
+                                            job_id="get_all_cdrs", # specify a job name
+                                            job_name="get_all_cdrs",
+                                            enqueue_after_commit=False, # enqueue the job after the database commit is done at the end of the request
+                                            at_front=False, # put the job at the front of the queue
+                                           
+                                    
+                            )
 			else:
 				diff= frappe.utils.get_datetime() - get_datetime(self.last_cdr_date) 
 				
